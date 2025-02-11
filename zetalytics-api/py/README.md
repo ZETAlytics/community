@@ -1,8 +1,10 @@
 # zetalytics-api
 
-A straightforward python library for the Zetalytics Zonecruncher API.  For a list of all endpoints and query parameters, refer to the [API documentation](https://zonecruncher.com/api-v1-docs/).
+A straightforward python library for the Zetalytics Zonecruncher API.  For a list of all endpoints and query parameters, refer to the [API documentation](https://zonecruncher.com/api-v2-docs/).
 
 Use of the Zetalytics API and zetalytics-api client requires a user token.  You can request one [here](https://zetalytics.com/feb20/hands-on.html).
+
+If you qualify for premium API access, inquire via our website chat at zetalytics.com for the endpoint.
 
 ## Installation
 

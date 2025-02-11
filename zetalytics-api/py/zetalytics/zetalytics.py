@@ -2,7 +2,6 @@ import requests
 import sys
 import json
 
-
 class Zetalytics(object):
     """
     You can preconfigure all services globally with a ``config`` dict.
@@ -13,7 +12,7 @@ class Zetalytics(object):
     def __init__(self, **kwargs):
         self.requester = requests.session()
         self.config = {
-            'base_url': 'https://zonecruncher.com/api/v1/'
+            'base_url': 'https://zonecruncher.com/api/v2/'
         }
         self.config.update(kwargs)
         if len(self.config.get('token')) != 32:
@@ -64,6 +63,7 @@ class Zetalytics(object):
             Params;
             q: Domain name
             toBaseDomain: Boolean, if true convert to base domain
+            noSubdomains: Exclude subdomain matches
             size: Result size
             start: Epoch time to start search from
             end: Epoch time to end search at
@@ -73,12 +73,24 @@ class Zetalytics(object):
         args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
                         'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
                         'toBaseDomain': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'noSubdomains': {'type': 'Boolean', 'constraints': None, 'required': False},
                         'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
+                        }
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
+
+    def domain_zone_activity(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'toBaseDomain': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
             return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
@@ -92,8 +104,9 @@ class Zetalytics(object):
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
-                                    'required': False}
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
+                                    'required': False},
+                        'noSubdomains': {'type': 'Boolean', 'constraints': None, 'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
             return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
@@ -106,8 +119,9 @@ class Zetalytics(object):
                         'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'noSubdomains': {'type': 'Boolean', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
@@ -118,6 +132,7 @@ class Zetalytics(object):
         args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
                         'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
                         'live': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'fast': {'type': 'Boolean', 'constraints': None, 'required': False},
                         'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
@@ -133,38 +148,9 @@ class Zetalytics(object):
                         'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'noSubdomains': {'type': 'Boolean', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
-                                    'required': False}
-                        }
-        if (self.check_integrity(args_allowed, **params)):
-            return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
-
-    def domain2malwaredns(self, **params):
-        endpoint = sys._getframe().f_code.co_name
-        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
-                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
-                        'toBaseDomain': {'type': 'Boolean', 'constraints': None, 'required': False},
-                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
-                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
-                                    'required': False}
-                        }
-        if (self.check_integrity(args_allowed, **params)):
-            return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
-
-    def domain2malwarehttp(self, **params):
-        endpoint = sys._getframe().f_code.co_name
-        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
-                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
-                        'toBaseDomain': {'type': 'Boolean', 'constraints': None, 'required': False},
-                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
-                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
@@ -178,8 +164,9 @@ class Zetalytics(object):
                         'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'noSubdomains': {'type': 'Boolean', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
@@ -193,8 +180,9 @@ class Zetalytics(object):
                         'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'noSubdomains': {'type': 'Boolean', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
@@ -209,7 +197,7 @@ class Zetalytics(object):
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
@@ -223,8 +211,26 @@ class Zetalytics(object):
                         'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'noSubdomains': {'type': 'Boolean', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
+                                    'required': False}
+                        }
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
+
+    def domain2rrtypes(self, **params):
+        endpoint = sys._getframe().f_code.co_name
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'rrtypes': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'toBaseDomain': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'noSubdomains': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'tsfield': {'type': 'String',
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
@@ -238,8 +244,9 @@ class Zetalytics(object):
                         'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'noSubdomains': {'type': 'Boolean', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
@@ -249,7 +256,7 @@ class Zetalytics(object):
         endpoint = sys._getframe().f_code.co_name
         args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
                         'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
-                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 1000]}, 'required': False},
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
                         }
@@ -264,7 +271,7 @@ class Zetalytics(object):
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
@@ -278,7 +285,7 @@ class Zetalytics(object):
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
@@ -292,50 +299,7 @@ class Zetalytics(object):
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
-                                    'required': False}
-                        }
-        if (self.check_integrity(args_allowed, **params)):
-            return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
-
-    def firstseen(self, **params):
-        endpoint = sys._getframe().f_code.co_name
-        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
-                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
-                        'cctld': {'type': 'Boolean', 'constraints': None, 'required': False},
-                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
-                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["indexTS", "date"]},
-                                    'required': False}
-                        }
-        if (self.check_integrity(args_allowed, **params)):
-            return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
-
-    def hash2malwaredns(self, **params):
-        endpoint = sys._getframe().f_code.co_name
-        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
-                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
-                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
-                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
-                                    'required': False}
-                        }
-        if (self.check_integrity(args_allowed, **params)):
-            return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
-
-    def hash2malwarehttp(self, **params):
-        endpoint = sys._getframe().f_code.co_name
-        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
-                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
-                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
-                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
@@ -346,11 +310,12 @@ class Zetalytics(object):
         args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
                         'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
                         'toBaseDomain': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'noSubdomains': {'type': 'Boolean', 'constraints': None, 'required': False},
                         'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
@@ -360,40 +325,11 @@ class Zetalytics(object):
         endpoint = sys._getframe().f_code.co_name
         args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
                         'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
-                        'toBaseDomain': {'type': 'Boolean', 'constraints': None, 'required': False},
                         'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
-                                    'required': False}
-                        }
-        if (self.check_integrity(args_allowed, **params)):
-            return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
-
-    def ip2malwaredns(self, **params):
-        endpoint = sys._getframe().f_code.co_name
-        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
-                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
-                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
-                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
-                                    'required': False}
-                        }
-        if (self.check_integrity(args_allowed, **params)):
-            return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
-
-    def ip2malwarehttp(self, **params):
-        endpoint = sys._getframe().f_code.co_name
-        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
-                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
-                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
-                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
-                        'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_seen", "last_ts", "all"]},
                                     'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
@@ -408,8 +344,27 @@ class Zetalytics(object):
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
+                        }
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
+
+    def ip2pwhois(self, **params):
+        params.update(token=self.config.get('token'))
+        endpoint = sys._getframe().f_code.co_name
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True}
+                        }
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
+
+    def liveDNS(self, **params):
+        params.update(token=self.config.get('token'))
+        endpoint = sys._getframe().f_code.co_name
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'toBaseDomain': {'type': 'Boolean', 'constraints': None, 'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
             return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
@@ -419,12 +374,25 @@ class Zetalytics(object):
         args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
                         'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
                         'toBaseDomain': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'noSubdomains': {'type': 'Boolean', 'constraints': None, 'required': False},
                         'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
+                        }
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
+
+    def ns_zone_activity(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_','-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'toBaseDomain': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
             return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
@@ -438,7 +406,7 @@ class Zetalytics(object):
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
-                                    'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
+                                    'constraints': {'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
                                     'required': False}
                         }
         if (self.check_integrity(args_allowed, **params)):
@@ -448,6 +416,8 @@ class Zetalytics(object):
         endpoint = sys._getframe().f_code.co_name
         args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
                         'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'active': {'type': 'Integer', 'constraints': None, 'required': False},
+                        'days': {'type': 'Integer', 'constraints': None, 'required': False},
                         'toBaseDomain': {'type': 'Boolean', 'constraints': None, 'required': False},
                         'v': {'type': 'Boolean', 'constraints': None, 'required': False},
                         'vv': {'type': 'Boolean', 'constraints': None, 'required': False},
@@ -460,11 +430,275 @@ class Zetalytics(object):
                                   'multi': ["a", "aaaa", "cname", "mx", "name", "ns", "ptr", "soa_email", "soa_server",
                                             "txt"]},
                               'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': False},
                         'start': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'end': {'type': 'Epoch', 'constraints': None, 'required': False},
                         'tsfield': {'type': 'String',
                                     'constraints': {'multi': ["first_seen", "first_ts", "last_seen", "last_ts", "all"]},
                                     'required': False}
                         }
+
         if (self.check_integrity(args_allowed, **params)):
-            return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
+            if 'endpoint' in params:
+                return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+            else:
+                return json.loads(self.requester.get(self.config['base_url'] + endpoint, params=params).text)
+
+    # FIXME - Document function name, which does not match api 1k-maps-term
+    def one_k_maps_term(self, **params):
+        #endpoint = sys._getframe().f_code.co_name
+        endpoint = '1k-maps-term'
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'domain': {'type': 'String', 'constraints': None, 'required': False},
+                        'ns': {'type': 'String', 'constraints': None, 'required': False},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def arin_ips(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def arin_originAS(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def cert_domain(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'toBaseDomain': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'tsfield': {'type': 'String',
+                                    'constraints': {
+                                    'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
+                                    'required': False}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def cert_fingerprint(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'tsfield': {'type': 'String',
+                                    'constraints': {
+                                        'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
+                                    'required': False}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def cert_full_text_domain(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'tsfield': {'type': 'String',
+                                    'constraints': {
+                                        'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
+                                    'required': False}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def dname2ns_intersection(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True},
+                        'v': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'noActive': {'type': 'Boolean', 'constraints': None, 'required': False}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def full_text_rname(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def ip2torexit(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'flags': {'type': 'String', 'constraints': None, 'required': False},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def name2torexit(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'flags': {'type': 'String', 'constraints': None, 'required': False},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def ns_intersection(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'domain': {'type': 'String', 'constraints': None, 'required': False},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'v': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'first_seen_start': {'type': 'String', 'constraints': None, 'required': False},
+                        'first_seen_end': {'type': 'String', 'constraints': None, 'required': False},
+                        'last_seen_start': {'type': 'String', 'constraints': None, 'required': False},
+                        'last_seen_end': {'type': 'String', 'constraints': None, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def owner2whois(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def ptr_by_ip(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True},
+                        'tsfield': {'type': 'String',
+                                    'constraints': {
+                                        'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
+                                    'required': False}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def ptr_by_term(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True},
+                        'tsfield': {'type': 'String',
+                                    'constraints': {
+                                        'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
+                                    'required': False}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def soa_dname(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'noActive': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True},
+                        'tsfield': {'type': 'String',
+                                    'constraints': {
+                                    'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
+                                    'required': False}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def soa_qname(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'toBaseDomain': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'noActive': {'type': 'Boolean', 'constraints': None, 'required': False},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True},
+                        'tsfield': {'type': 'String',
+                                    'constraints': {
+                                    'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
+                                    'required': False}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)
+
+    def soa_rname(self, **params):
+        endpoint = sys._getframe().f_code.co_name.replace('_', '-')
+        args_allowed = {'q': {'type': 'String', 'constraints': None, 'required': True},
+                        'token': {'type': 'String', 'constraints': {'length': 32}, 'required': True},
+                        'size': {'type': 'Integer', 'constraints': {'range': [0, 100000]}, 'required': False},
+                        'start': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'end': {'type': 'Epoch', 'constraints': None, 'required': False},
+                        'endpoint': {'type': 'String', 'constraints': None, 'required': True},
+                        'tsfield': {'type': 'String',
+                                    'constraints': {
+                                        'multi': ["first_seen", "first_ts", "date", "last_ts", "last_seen", "all"]},
+                                    'required': False}
+                        }
+
+        if (self.check_integrity(args_allowed, **params)):
+            return json.loads(self.requester.get(params['endpoint'] + endpoint, params=params).text)

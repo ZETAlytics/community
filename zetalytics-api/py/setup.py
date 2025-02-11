@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="zetalytics-api",
-    version="1.0.1",
+    version="2.0.0",
     author="Zetalytics",
     author_email="integrations@zetalytics.com",
     description="API wrapper for the Zetalytics Zonecruncher API.",
